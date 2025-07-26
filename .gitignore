@@ -1,0 +1,5 @@
+out/
+Dependencies/
+Dependencies_build/
+.vs/
+vcpkg/
