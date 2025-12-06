@@ -56,7 +56,7 @@ namespace SoundEngine
         while (soundsToDelete.empty() == false)
         {
             SfxSoundHandle hndl = soundsToDelete.top();
-            if (soundAccessCounter.getCount(unsigned int(hndl)) == 0)
+            if (soundAccessCounter.getCount(std::uint32_t(hndl)) == 0)
             {
                 soundDelete(hndl);
                 soundsToDelete.pop();
@@ -258,7 +258,7 @@ namespace SoundEngine
         {
 
             // todo: FIX!
-            if (soundAccessCounter.getCount(unsigned int(hndl)) == 0)
+            if (soundAccessCounter.getCount(std::uint32_t(hndl)) == 0)
             {// delete now if no source has this buffer
 
                 auto e = sounds.getElement(hndl);
@@ -285,7 +285,7 @@ namespace SoundEngine
             auto e = getEmitter(hndl);
             e->stop();
 
-            soundAccessCounter.decrement(unsigned int(e->getSoundHandle()));
+            soundAccessCounter.decrement(std::uint32_t(e->getSoundHandle()));
 
             emitters.removeElement(hndl);
 
@@ -311,7 +311,7 @@ namespace SoundEngine
 
         sID = emitters.addElement(source);
 
-        soundAccessCounter.increment(unsigned int(sound));
+        soundAccessCounter.increment(std::uint32_t(sound));
 
         // Attach sound buffer to source
         alSourcei(source->getSourceID(), AL_BUFFER, snd->getBufferID());

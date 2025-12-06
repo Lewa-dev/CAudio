@@ -31,9 +31,9 @@ namespace SoundEngine
     class SoundCore
     {
       private:
-        static const unsigned int SOUNDARRAYSIZE = 256;
-        static const unsigned int soundEmitterArraySize = 256;
-        static const unsigned int soundStreamArraySize = 16;
+        static const std::uint32_t SOUNDARRAYSIZE = 256;
+        static const std::uint32_t soundEmitterArraySize = 256;
+        static const std::uint32_t soundStreamArraySize = 16;
 
         ALCdevice* device;
         ALCcontext* context;

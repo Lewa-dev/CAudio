@@ -4,7 +4,7 @@ AccessCounter::AccessCounter()
 {
 }
 
-void AccessCounter::increment(unsigned int index)
+void AccessCounter::increment(std::uint32_t index)
 {
     auto it = counterMap.find(index);
     if (it != counterMap.end())
@@ -17,7 +17,7 @@ void AccessCounter::increment(unsigned int index)
     }
 }
 
-void AccessCounter::decrement(unsigned int index)
+void AccessCounter::decrement(std::uint32_t index)
 {
     auto it = counterMap.find(index);
     if (it != counterMap.end())
@@ -30,7 +30,7 @@ void AccessCounter::decrement(unsigned int index)
     }
 }
 
-unsigned int AccessCounter::getCount(unsigned int index)
+std::uint32_t AccessCounter::getCount(std::uint32_t index)
 {
     auto it = counterMap.find(index);
     if (it != counterMap.end())

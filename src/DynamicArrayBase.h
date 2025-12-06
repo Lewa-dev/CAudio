@@ -138,7 +138,7 @@ namespace Engine
     template<typename T>
     inline DynamicArrayBase<T>& DynamicArrayBase<T>::operator=(const DynamicArrayBase<T>& other)
     {
-        reziseBuffer(other.size());
+        rezise(other.size());
         for (size_t i = 0; i < other.size(); i++)
         {
             buffer[i] = other[i];
@@ -155,7 +155,7 @@ namespace Engine
             buffer[i] = other[i];
         }
 
-        other.reziseBuffer(DynamicArrayBase::DEFAULTSIZE);
+        other.rezise(DynamicArrayBase::DEFAULTSIZE);
 
         other.clear();
     }
