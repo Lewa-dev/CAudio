@@ -1,6 +1,6 @@
 #pragma once
 
-//for stream threading
+// for stream threading
 
 //----------
 #include <atomic>
@@ -9,129 +9,131 @@
 #include "DataFetch.h"
 #include <mutex>
 
-namespace SoundEngine {
-		//Music/Sound which will be streamed in realtime from the disk
-	class SoundStream {
-		static const int BUFFER_COUNT = 3;
-	private:
-		struct Buffer {
-		private:
-			char* data = nullptr;
-			unsigned int bytesRead = 0;
-			unsigned int bufferSize;//also datasize
+namespace SoundEngine
+{
+    // Music/Sound which will be streamed in realtime from the disk
+    class SoundStream
+    {
+        static const int BUFFER_COUNT = 3;
 
-		public:
-			Buffer(unsigned int bufferSize);
-			~Buffer();
-			char* getData();
-			unsigned int getBufferSize();
-			unsigned int getBytesRead();
-			void setBytesRead(unsigned int bytesRead);
-		};
+      private:
+        struct Buffer
+        {
+          private:
+            char* data = nullptr;
+            unsigned int bytesRead = 0;
+            unsigned int bufferSize;// also datasize
 
-		//various flags which then get processed in the processThread
-		struct ControlData {
-			std::atomic<bool> run = true;
+          public:
+            Buffer(unsigned int bufferSize);
+            ~Buffer();
+            char* getData();
+            unsigned int getBufferSize();
+            unsigned int getBytesRead();
+            void setBytesRead(unsigned int bytesRead);
+        };
 
-			std::atomic<bool> resetToStart = false;
+        // various flags which then get processed in the processThread
+        struct ControlData
+        {
+            std::atomic<bool> run = true;
 
-			std::atomic<bool> setLoopTrue = false;
-			std::atomic<bool> setLoopFalse = false;
+            std::atomic<bool> resetToStart = false;
 
-			std::atomic<bool> startStream = false;
-			std::atomic<bool> stopStream = false;
-		};
+            std::atomic<bool> setLoopTrue = false;
+            std::atomic<bool> setLoopFalse = false;
 
-		//data for loadThread
-		struct LoadThreadData {
-			std::atomic<bool> run = true;
+            std::atomic<bool> startStream = false;
+            std::atomic<bool> stopStream = false;
+        };
 
-			std::atomic<bool> endReached = false;
-			std::atomic<bool> reset = false;//if we want to reset to the start of the file
+        // data for loadThread
+        struct LoadThreadData
+        {
+            std::atomic<bool> run = true;
 
-			std::mutex threadBlock;
-		};
+            std::atomic<bool> endReached = false;
+            std::atomic<bool> reset = false;// if we want to reset to the start of the file
 
-		//data for playThread
-		struct PlayThreadData {
-			std::atomic<bool> run = true;
+            std::mutex threadBlock;
+        };
 
-			unsigned int alreadyInsertedAlBuffers = 0;
-			std::atomic<bool> isPlaying = false;
+        // data for playThread
+        struct PlayThreadData
+        {
+            std::atomic<bool> run = true;
 
-			std::mutex threadBlock;
-		};
+            unsigned int alreadyInsertedAlBuffers = 0;
+            std::atomic<bool> isPlaying = false;
 
-		//OpenAL buffers, etc...
-		//This data will only be modified from the two internal threads!
-		struct InternalData {
-			
-			//
-			std::atomic<bool> loop = false;
-			std::atomic<bool> playStream = false;
-			//----
+            std::mutex threadBlock;
+        };
 
+        // OpenAL buffers, etc...
+        // This data will only be modified from the two internal threads!
+        struct InternalData
+        {
 
-			//only accessed in playStreamTask
-			ALuint alBuffer[BUFFER_COUNT];//Buffers
+            //
+            std::atomic<bool> loop = false;
+            std::atomic<bool> playStream = false;
+            //----
 
-			//source is only modified in playStreamTask. 
-			ALuint source;
-			//std::mutex alSourceModificationMutex;
+            // only accessed in playStreamTask
+            ALuint alBuffer[BUFFER_COUNT];// Buffers
 
-			//only loaded in loadStreamtask. Playstreamtask only accesses read-only methods (frequency, bitrate values)
-			DataFetch::OggFile* file;
+            // source is only modified in playStreamTask.
+            ALuint source;
+            // std::mutex alSourceModificationMutex;
 
+            // only loaded in loadStreamtask. Playstreamtask only accesses read-only methods (frequency, bitrate values)
+            DataFetch::OggFile* file;
 
-			SharedQueue<Buffer*> emptyBuffers;//thread can write into them
-			SharedQueue<Buffer*> fullBuffers;//buffers which were written to will be inserted here
+            SharedQueue<Buffer*> emptyBuffers;// thread can write into them
+            SharedQueue<Buffer*> fullBuffers; // buffers which were written to will be inserted here
 
+            InternalData(const wchar_t* fileName);
 
-			InternalData(const wchar_t* fileName);
+            ~InternalData();
+        };
 
-			~InternalData();
-		};
+        std::thread* loadStreamThread;
+        std::thread* playStreamThread;
+        std::thread* controlStreamThread;
 
+        InternalData* data;
+        ControlData controlData;
 
-		std::thread* loadStreamThread;
-		std::thread* playStreamThread;
-		std::thread* controlStreamThread;
+        // data for threads. (Only threads can access that!)
+        PlayThreadData playData;
+        LoadThreadData loadData;
 
-		InternalData* data;
-		ControlData controlData;
+        // Streaming functions which are defined in "Streaming.cpp"
+        static void controlStreamTask(LoadThreadData* loadData, PlayThreadData* playData, ControlData* controlData, InternalData* data);
+        static void loadStreamTask(LoadThreadData* loadData, InternalData* data);
+        static void playStreamTask(PlayThreadData* playData, InternalData* data);// will be passed into std::thread
 
-		//data for threads. (Only threads can access that!)
-		PlayThreadData playData;
-		LoadThreadData loadData;
+      public:
+        SoundStream(const wchar_t* fileName);
+        ~SoundStream();
 
+        ALuint getSourceID()
+        {
+            return data->source;
+        }
 
+        void resetPlayback();
 
-		//Streaming functions which are defined in "Streaming.cpp"
-		static void controlStreamTask(LoadThreadData* loadData, PlayThreadData* playData, ControlData* controlData, InternalData* data);
-		static void loadStreamTask(LoadThreadData* loadData, InternalData* data);
-		static void playStreamTask(PlayThreadData* playData,InternalData* data);//will be passed into std::thread
+        void stop();
 
-	public:
-		SoundStream(const wchar_t* fileName);
-		~SoundStream();
+        void play();
 
-		ALuint getSourceID() {
-			return data->source;
-		}
+        void setGain(float gain);
 
-		void resetPlayback();
+        float getGain();
 
-		void stop();
+        bool isPlaying();
 
-		void play();
-
-		void setGain(float gain);
-
-		float getGain();
-
-		bool isPlaying();
-
-		void setLoop(bool loop);
-
-	};
+        void setLoop(bool loop);
+    };
 }

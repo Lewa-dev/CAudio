@@ -1,30 +1,32 @@
 #pragma once
 #include "CAudio/SoundHandles.h"
 #include "OpenAL.h"
-namespace SoundEngine {
-	class SoundEmitter {
-	private:
-		//TODO: don't store soundhandles directly. They should only be exposed for the public interface.
-		SfxSoundHandle soundHandle;
-		ALuint sourceID;
-	public:
-		ALuint getSourceID();
+namespace SoundEngine
+{
+    class SoundEmitter
+    {
+      private:
+        // TODO: don't store soundhandles directly. They should only be exposed for the public interface.
+        SfxSoundHandle soundHandle;
+        ALuint sourceID;
 
-		SfxSoundHandle getSoundHandle();
+      public:
+        ALuint getSourceID();
 
-		void play();
-		void stop();
-		bool isPlaying();
+        SfxSoundHandle getSoundHandle();
 
-		void setPosition(float x, float y, float z);
+        void play();
+        void stop();
+        bool isPlaying();
 
-		void setLoop(bool loop);
-		void setRelative(bool relative);
-		void setGain(float gain);
-		void setPitch(float pitch);
+        void setPosition(float x, float y, float z);
 
-		SoundEmitter(SfxSoundHandle soundHandle);
-		~SoundEmitter();
+        void setLoop(bool loop);
+        void setRelative(bool relative);
+        void setGain(float gain);
+        void setPitch(float pitch);
 
-	};
+        SoundEmitter(SfxSoundHandle soundHandle);
+        ~SoundEmitter();
+    };
 }

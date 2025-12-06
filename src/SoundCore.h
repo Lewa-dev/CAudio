@@ -1,5 +1,5 @@
 #pragma once
-#include"OpenAL.h"
+#include "OpenAL.h"
 #include "vorbis/vorbisfile.h"
 #include <cstdio>
 #include <iostream>
@@ -8,7 +8,6 @@
 
 #include <thread>
 
-
 #include "DataFetch.h"
 #include "CAudio\SoundHandles.h"
 
@@ -16,7 +15,7 @@
 #include "SoundStream.h"
 #include "SoundEmitter.h"
 
-//data
+// data
 #include <map>
 #include <stack>
 
@@ -24,118 +23,108 @@
 #include "EntityCollection.h"
 #include "AccessCounter.h"
 
+namespace SoundEngine
+{
 
-namespace SoundEngine {
+    //----------------------
 
+    class SoundCore
+    {
+      private:
+        static const unsigned int SOUNDARRAYSIZE = 256;
+        static const unsigned int soundEmitterArraySize = 256;
+        static const unsigned int soundStreamArraySize = 16;
 
-	//----------------------
+        ALCdevice* device;
+        ALCcontext* context;
 
-	class SoundCore {
-	private:
-		static const unsigned int SOUNDARRAYSIZE = 256;
-		static const unsigned int soundEmitterArraySize = 256;
-		static const unsigned int soundStreamArraySize = 16;
+        EntityCollection<Sound> sounds;
+        // std::array<Sound*, SOUNDARRAYSIZE> soundArray;//pointer of pointers
+        AccessCounter soundAccessCounter;
+        // unsigned int soundAccessCounter[SOUNDARRAYSIZE];//array. If soundSource uses a sound, the counter goes up. > prevents deletion of sounds while a soundsource is still using it
+        // std::stack<SoundHandle> freeSoundIDs;
+        std::stack<SfxSoundHandle> soundsToDelete;// used if a sound buffer has to be deleted, but is still used by a source. Instead of deleting it upon request it is added to the stack and deleted if the accesscounter falls to 0
 
-		ALCdevice *device;
-		ALCcontext *context;
+        EntityCollection<SoundEmitter> emitters;
 
+        EntityCollection<SoundStream> soundStreams;
+        // std::array<SoundStream*, soundStreamArraySize> streamArray;//pointer of pointers
+        // std::stack<SoundStreamHandle> freeStreamIDs;
 
-		EntityCollection<Sound> sounds;
-		//std::array<Sound*, SOUNDARRAYSIZE> soundArray;//pointer of pointers
-		AccessCounter soundAccessCounter;
-		//unsigned int soundAccessCounter[SOUNDARRAYSIZE];//array. If soundSource uses a sound, the counter goes up. > prevents deletion of sounds while a soundsource is still using it
-		//std::stack<SoundHandle> freeSoundIDs;
-		std::stack<SfxSoundHandle> soundsToDelete;//used if a sound buffer has to be deleted, but is still used by a source. Instead of deleting it upon request it is added to the stack and deleted if the accesscounter falls to 0
+        Sound* getSound(SfxSoundHandle hndl);
+        SoundEmitter* getEmitter(SfxEmitterHandle hndl);
+        SoundStream* getStream(SfxSoundStreamHandle hndl);
 
+        bool emitterIsValid(SfxEmitterHandle hndl);
+        bool soundIsValid(SfxSoundHandle hndl);
+        bool streamIsValid(SfxSoundStreamHandle hndl);
+        // std::unordered_map<std::string, SoundSource*> soundSourceMap;
 
-	
-		EntityCollection<SoundEmitter> emitters;
+        bool cleanupQueueSounds();
 
+      public:
+        SoundCore();
+        ~SoundCore();
 
-		EntityCollection<SoundStream> soundStreams;
-		//std::array<SoundStream*, soundStreamArraySize> streamArray;//pointer of pointers
-		//std::stack<SoundStreamHandle> freeStreamIDs;
+        //-----------Sound------------------------
 
+        SfxSoundHandle soundCreate(const char* utf8path);
 
+        // call those functions after soundCreate but before the first time playing a sound.
+        void soundInitSetLoopPoints(SfxSoundHandle hndl, float startOffsetTime, float endOffsetTime);
 
-		Sound* getSound(SfxSoundHandle hndl);
-		SoundEmitter * getEmitter(SfxEmitterHandle hndl);
-		SoundStream * getStream(SfxSoundStreamHandle hndl);
+        int soundGetSampleLength(SfxSoundHandle hndl);
+        float soundGetDurationSeconds(SfxSoundHandle hndl);
 
-		bool emitterIsValid(SfxEmitterHandle hndl);
-		bool soundIsValid(SfxSoundHandle hndl);
-		bool streamIsValid(SfxSoundStreamHandle hndl);
-		//std::unordered_map<std::string, SoundSource*> soundSourceMap;
+        void soundDelete(SfxSoundHandle hndl);
 
-		bool cleanupQueueSounds();
-	public:
+        //-----------Emitter------------------------
 
-		SoundCore();
-		~SoundCore();
+        SfxEmitterHandle emitterCreate(SfxSoundHandle sound);
 
+        void emitterDelete(SfxEmitterHandle hndl);
 
+        void emitterSetPosition(SfxEmitterHandle hndl, float x, float y, float z);
 
-		//-----------Sound------------------------
+        void emitterSetGain(SfxEmitterHandle hndl, float gain);
 
-		SfxSoundHandle soundCreate(const char* utf8path);
+        void emitterSetPitch(SfxEmitterHandle hndl, float gain);
 
-		//call those functions after soundCreate but before the first time playing a sound.
-		void soundInitSetLoopPoints(SfxSoundHandle hndl, float startOffsetTime, float endOffsetTime);
+        void emitterSetLoop(SfxEmitterHandle hndl, bool loop);
 
-		int soundGetSampleLength(SfxSoundHandle hndl);
-		float soundGetDurationSeconds(SfxSoundHandle hndl);
+        void emitterSetRelative(SfxEmitterHandle hndl, bool loop);
 
-		void soundDelete(SfxSoundHandle hndl);
+        void emitterPlay(SfxEmitterHandle hndl);
 
+        void emitterStop(SfxEmitterHandle hndl);
 
-		//-----------Emitter------------------------
+        bool emitterIsPlaying(SfxEmitterHandle hndl);
 
-		SfxEmitterHandle emitterCreate(SfxSoundHandle sound);
+        //-----------Stream------------------------
 
-		void emitterDelete(SfxEmitterHandle hndl);
+        SfxSoundStreamHandle streamCreate(const char* utf8path);
 
-		void emitterSetPosition(SfxEmitterHandle hndl,float x,float y,float z);
+        void streamPlay(SfxSoundStreamHandle hndl);
 
-		void emitterSetGain(SfxEmitterHandle hndl, float gain);
+        void streamStop(SfxSoundStreamHandle hndl);
+        void streamResetPlayback(SfxSoundStreamHandle hndl);
 
-		void emitterSetPitch(SfxEmitterHandle hndl, float gain);
+        bool streamIsPlaying(SfxSoundStreamHandle hndl);
 
-		void emitterSetLoop(SfxEmitterHandle hndl, bool loop);
+        void streamDelete(SfxSoundStreamHandle hndl);
 
-		void emitterSetRelative(SfxEmitterHandle hndl, bool loop);
+        void streamLoop(SfxSoundStreamHandle hndl, bool loop);
 
-		void emitterPlay(SfxEmitterHandle hndl);
+        void streamSetGain(SfxSoundStreamHandle hndl, float gain);
+        float streamGetGain(SfxSoundStreamHandle hndl);
 
-		void emitterStop(SfxEmitterHandle hndl);
+        //-----------Listener------------------------
 
-		bool emitterIsPlaying(SfxEmitterHandle hndl);
+        void listenerSetPosition(float x, float y, float z);
+        void listenerSetOrientation(float xForward, float yForward, float zFoorward, float xUp, float yUp, float zUp);
 
+        //------------------------------------------
 
-		//-----------Stream------------------------
-
-		SfxSoundStreamHandle streamCreate(const char* utf8path);
-
-		void streamPlay(SfxSoundStreamHandle hndl);
-
-		void streamStop(SfxSoundStreamHandle hndl);
-		void streamResetPlayback(SfxSoundStreamHandle hndl);
-
-		bool streamIsPlaying(SfxSoundStreamHandle hndl);
-
-		void streamDelete(SfxSoundStreamHandle hndl);
-		
-		void streamLoop(SfxSoundStreamHandle hndl,bool loop);
-
-		void streamSetGain(SfxSoundStreamHandle hndl, float gain);
-		float streamGetGain(SfxSoundStreamHandle hndl);
-		//-----------Listener------------------------
-		void listenerSetPosition(float x, float y, float z);
-		void listenerSetOrientation(float xForward, float yForward, float zFoorward, float xUp, float yUp, float zUp);
-
-
-		//------------------------------------------
-
-		void update();//cleanup of sound at runtime,etc..
-		
- 	};
+        void update();// cleanup of sound at runtime,etc..
+    };
 }
