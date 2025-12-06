@@ -11,7 +11,7 @@ class SharedQueue
   private:
     std::queue<T> mQueue;
     mutable std::mutex mMutex;
-    std::condition_variable mCondition;
+    mutable std::condition_variable mCondition;
 
   public:
     void push(const T& element);
